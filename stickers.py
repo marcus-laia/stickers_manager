@@ -115,6 +115,19 @@ def write_to_file(content:str, filename: str, mode: str):
         print("ERRO ESCREVENDO NO ARQUIVO:", filename)
 
 
+def get_missing(stickers: pd.DataFrame) -> str:
+    all_stickers = pd.read_csv('all_stickers.csv')
+    missing = all_stickers.merge(stickers[['code']], on='code', how='outer', indicator='side')
+    missing = missing[missing['side']=='left_only']
+
+    text=''
+    for prefix in missing['prefix'].unique():
+        mask = missing['prefix'].eq(prefix)
+        text += f'{prefix}: {", ".join(missing.loc[mask, "id"].astype(str).values)}\n'
+        
+    return text
+
+
 def apply_option(stickers: pd.DataFrame, option: str, saved: bool, stickers_filename: str):
     if option == 'Pesquisar':
         while True:
@@ -141,6 +154,11 @@ def apply_option(stickers: pd.DataFrame, option: str, saved: bool, stickers_file
         repeated = get_repeated(stickers)
         write_to_file(repeated, 'repeated.txt', 'w')
         print(repeated)
+    
+    elif option == 'Exportar Faltantes':
+        missing = get_missing(stickers)
+        write_to_file(missing, 'missing.txt', 'w')
+        print(missing)
 
     elif option == 'Obter Status':
         print('FUNCAO EM DESENVOLVIMENTO!')
@@ -178,10 +196,11 @@ if __name__ == "__main__":
                 2: 'Adicionar',
                 3: 'Remover',
                 4: 'Exportar Repetidas',
-                5: 'Obter Status',
-                6: 'Limpar Pesquisas',
-                7: 'Salvar',
-                8: 'Sair' }
+                5: 'Exportar Faltantes',
+                6: 'Obter Status',
+                7: 'Limpar Pesquisas',
+                8: 'Salvar',
+                9: 'Sair' }
 
     while True:
         print(f"""Opções:{chr(10)}{str(options)[1:-1].replace(', ', chr(10)).replace("'", "")}""")
